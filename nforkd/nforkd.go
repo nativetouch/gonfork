@@ -3,9 +3,9 @@
 package main
 
 import (
-	"github.com/datacratic/goklog/klog"
-	"github.com/datacratic/gonfork/nfork"
-	"github.com/datacratic/gorest/rest"
+	"github.com/RAttab/goklog/klog"
+	"github.com/RAttab/gonfork/nfork"
+	"github.com/RAttab/gorest/rest"
 
 	"encoding/json"
 	"flag"

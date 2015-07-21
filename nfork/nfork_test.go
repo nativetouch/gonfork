@@ -3,7 +3,7 @@
 package nfork
 
 import (
-	"github.com/datacratic/goset"
+	"github.com/RAttab/goset"
 
 	"bytes"
 	"fmt"

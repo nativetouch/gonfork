@@ -3,7 +3,7 @@
 package nfork
 
 import (
-	"github.com/datacratic/goklog/klog"
+	"github.com/RAttab/goklog/klog"
 
 	"bytes"
 	"encoding/json"
