@@ -19,6 +19,7 @@
             "prod": "localhost:8090",
             "logging": "localhost:8091"
         },
-        "active": "prod",
+        "timeout": "100ms",
+        "active": "prod"
     }
 ]
