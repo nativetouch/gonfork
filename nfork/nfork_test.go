@@ -3,7 +3,7 @@
 package nfork
 
 import (
-	"github.com/RAttab/goset"
+	"github.com/nativetouch/goset"
 
 	"bytes"
 	"fmt"

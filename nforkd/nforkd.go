@@ -3,9 +3,9 @@
 package main
 
 import (
-	"github.com/RAttab/goklog/klog"
-	"github.com/RAttab/gonfork/nfork"
-	"github.com/RAttab/gorest/rest"
+	"github.com/nativetouch/goklog/klog"
+	"github.com/nativetouch/gonfork/nfork"
+	"github.com/nativetouch/gorest/rest"
 
 	"encoding/json"
 	"flag"

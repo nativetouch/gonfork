@@ -4,7 +4,7 @@ package nfork
 
 import (
 	"fmt"
-	"github.com/RAttab/goklog/klog"
+	"github.com/nativetouch/goklog/klog"
 	"net/http"
 	"net/http/httptest"
 	"testing"

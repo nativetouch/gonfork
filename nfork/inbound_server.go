@@ -3,7 +3,7 @@
 package nfork
 
 import (
-	"github.com/RAttab/goklog/klog"
+	"github.com/nativetouch/goklog/klog"
 
 	"net"
 	"net/http"

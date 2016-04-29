@@ -3,8 +3,8 @@
 package nfork
 
 import (
-	"github.com/RAttab/goklog/klog"
-	"github.com/RAttab/gorest/rest"
+	"github.com/nativetouch/goklog/klog"
+	"github.com/nativetouch/gorest/rest"
 
 	"fmt"
 	"log"
