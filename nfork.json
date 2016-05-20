@@ -3,9 +3,9 @@
         "name": "foo",
         "listen": ":9080",
         "out": {
-            "prod": "localhost:8080",
-            "staging": "localhost:8081",
-            "logging": "localhost:8082"
+            "prod": "http://localhost:8080",
+            "staging": "localhost:8081/test",
+            "logging": "https://localhost:8082/t/a/t"
         },
         "active": "prod",
         "timeout": "100ms",

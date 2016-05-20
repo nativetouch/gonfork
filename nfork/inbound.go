@@ -270,22 +270,33 @@ func (inbound *Inbound) parseAddr(addr string) (host, scheme string) {
 	return addr, "http"
 }
 
+func addScheme(addr string) (schemedAddr string) {
+	if i := strings.Index(addr, "://"); i >= 0 {
+		return addr
+	}
+	return "http://" + addr
+}
+
 func (inbound *Inbound) forward(
 	outbound string, oldReq *http.Request, addr string, body []byte) (*http.Response, []byte, error) {
 
 	t0 := time.Now()
 
-	host, scheme := inbound.parseAddr(addr)
+	//host, scheme := inbound.parseAddr(addr)
+	addr = addScheme(addr)
+	parsedURL, err := url.ParseRequestURI(addr)
+	if err != nil {
+		return nil, nil, inbound.error("parse", addr, err, t0)
+	}
+	fmt.Println(parsedURL.String())
 
 	newReq := new(http.Request)
 	*newReq = *oldReq
 
 	newReq.URL = new(url.URL)
-	*newReq.URL = *oldReq.URL
+	*newReq.URL = *parsedURL
 
-	newReq.Host = host
-	newReq.URL.Host = host
-	newReq.URL.Scheme = scheme
+	newReq.Host = parsedURL.Host
 	newReq.RequestURI = ""
 	newReq.Body = ioutil.NopCloser(bytes.NewReader(body))
 
