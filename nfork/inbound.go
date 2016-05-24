@@ -283,22 +283,32 @@ func (inbound *Inbound) forward(
 	t0 := time.Now()
 
 	//host, scheme := inbound.parseAddr(addr)
+	fmt.Println("Before:  " + addr)
 	addr = addScheme(addr)
+	fmt.Println("After:     " + addr)
 	parsedURL, err := url.ParseRequestURI(addr)
 	if err != nil {
 		return nil, nil, inbound.error("parse", addr, err, t0)
 	}
-	fmt.Println(parsedURL.String())
+	fmt.Println("Parsed:  " +parsedURL.String())
 
 	newReq := new(http.Request)
 	*newReq = *oldReq
 
 	newReq.URL = new(url.URL)
-	*newReq.URL = *parsedURL
+	*newReq.URL = *oldReq.URL
 
 	newReq.Host = parsedURL.Host
+	newReq.URL.Host = parsedURL.Host
+	newReq.URL.Scheme = parsedURL.Scheme
 	newReq.RequestURI = ""
 	newReq.Body = ioutil.NopCloser(bytes.NewReader(body))
+	
+	fmt.Println("oldReq.URL:\t", oldReq.URL)
+	fmt.Println("newReq.URL:\t", newReq.URL)
+	fmt.Println("newReq.Host:\t" + newReq.Host)
+	fmt.Println("newReq.URL.Host:\t" + newReq.URL.Host)
+	fmt.Println("newReq.URL.Scheme:\t" + newReq.URL.Scheme)
 
 	resp, err := inbound.Client.Do(newReq)
 	if err != nil {
