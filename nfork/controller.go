@@ -188,8 +188,8 @@ func (control *Controller) AddOutbound(inbound, outbound, addr string) error {
 		return fmt.Errorf("unknown inbound '%s'", inbound)
 	}
 
-	klog.KPrintf("controller.info", "AddOutbound(%s, %s, %s)", inbound, outbound, addr)
-	return server.AddOutbound(outbound, addr)
+	klog.KPrintf("controller.info", "AddOutbound(%s, %s, %s, %s)", inbound, outbound, addr, "")
+	return server.AddOutbound(outbound, addr, "")
 }
 
 // RemoveOutbound removes the given outbound for the given inbound.

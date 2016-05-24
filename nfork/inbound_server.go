@@ -74,10 +74,10 @@ func (server *InboundServer) ReadOutboundStats(outbound string) (*Stats, error) 
 }
 
 // AddOutbound calls AddOutbound on the managed inbound.
-func (server *InboundServer) AddOutbound(outbound, addr string) error {
+func (server *InboundServer) AddOutbound(outbound, addr, path string) error {
 	inbound := server.getInbound().Copy()
 
-	if err := inbound.AddOutbound(outbound, addr); err != nil {
+	if err := inbound.AddOutbound(outbound, addr, path); err != nil {
 		return err
 	}
 

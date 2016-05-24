@@ -29,7 +29,7 @@ func TestInboundServer(t *testing.T) {
 		Name:     "bob",
 		Listen:   listen,
 		Timeout:  50 * time.Millisecond,
-		Outbound: map[string]string{"s0": server0.URL},
+		Outbound: map[string]OutboundProperties{"s0": OutboundProperties{Host: server0.URL}},
 		Active:   "s0",
 	}
 	server, err := NewInboundServer(inbound)
@@ -81,7 +81,7 @@ func TestInboundServer(t *testing.T) {
 }
 
 func ExpectAddOut(t *testing.T, server *InboundServer, outb string, outServer *httptest.Server) {
-	if err := server.AddOutbound(outb, outServer.URL); err != nil {
+	if err := server.AddOutbound(outb, outServer.URL, ""); err != nil {
 		t.Errorf("FAIL(add): unable to add {%s, %s} -> %s", outb, outServer.URL, err)
 	}
 }

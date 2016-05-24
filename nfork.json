@@ -3,21 +3,32 @@
         "name": "foo",
         "listen": ":9080",
         "out": {
-            "prod": "http://localhost:8080",
-            "staging": "localhost:8081/test",
-            "logging": "https://localhost:8082/t/a/t"
+            "prod": {
+				"host":"http://localhost:8080"
+			},
+            "staging": {
+				"host":"localhost:8081",
+				"path":"test"
+			},
+            "logging": {
+				"host": "https://localhost:8082",
+				"path": "t/a/t"
+			}
         },
         "active": "prod",
         "timeout": "100ms",
         "idleConn": 64
     },
-
     {
         "name": "bar",
         "listen": ":9081",
         "out": {
-            "prod": "localhost:8090",
-            "logging": "localhost:8091"
+            "prod": {
+				"host": "localhost:8090"
+			},
+            "logging": {
+				"host": "localhost:8091"
+			}
         },
         "timeout": "100ms",
         "active": "prod"
