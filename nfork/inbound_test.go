@@ -52,35 +52,6 @@ func TestInbound(t *testing.T) {
 	s3.Expect("{GET /mopub r00}", "{PUT /mopub r01}", "{POST /mopub r02}")
 }
 
-/*
-func TestInboundRoutes(t *testing.T) {
-
-
-
-	s3 := &TestService{T: t, Name: "s3", Code: http.StatusCreated}
-	server3 := httptest.NewServer(s3)
-	defer server3.Close()
-
-	inbound := &Inbound{
-		Name:    "bobby",
-		Timeout: 50 * time.Millisecond,
-		Outbound: map[string]OutboundProperties{
-			"s3": OutboundProperties{Host: server3.URL, Path: "mopub"},
-			"s0": OutboundProperties{Host: server0.URL},
-			"s1": OutboundProperties{Host: server1.URL},
-			"s2": OutboundProperties{Host: server2.URL},
-		},
-		Active: "s1",
-	}
-	server := httptest.NewServer(inbound)
-	defer server.Close()
-
-	ExpectInbound(t, server.URL, "GET", "", "r00", http.StatusCreated, "s1")
-	ExpectInbound(t, server.URL, "PUT", "", "r01", http.StatusCreated, "s1")
-	ExpectInbound(t, server.URL, "POST", "", "r02", http.StatusCreated, "s1")
-	s3.Expect("{GET /mopub r00}", "{PUT /mopub r01}", "{POST /mopub r02}")
-}
-*/
 func BenchmarkInbound_1(b *testing.B) {
 	InboundBench(b, 1)
 }
