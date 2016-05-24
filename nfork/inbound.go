@@ -279,13 +279,6 @@ func (inbound *Inbound) record(outbound string, event Event) {
 	stats.Record(event)
 }
 
-func (inbound *Inbound) parseAddr(addr string) (host, scheme string) {
-	if i := strings.Index(addr, "://"); i >= 0 {
-		return addr[i+3:], addr[:i]
-	}
-	return addr, "http"
-}
-
 func addScheme(addr string) (schemedAddr string) {
 	if i := strings.Index(addr, "://"); i >= 0 {
 		return addr
@@ -305,7 +298,6 @@ func (inbound *Inbound) forward(
 
 	t0 := time.Now()
 
-	//host, scheme := inbound.parseAddr(addr)
 	addr = addScheme(addr)
 	addr = addPath(addr, path)
 	parsedURL, err := url.ParseRequestURI(addr)
@@ -319,10 +311,14 @@ func (inbound *Inbound) forward(
 	newReq.URL = new(url.URL)
 	newReq.Host = parsedURL.Host
 
-	hasPath := len(path) > 0
-	if hasPath {
+	hasEnforcedPath := len(path) > 0
+	if hasEnforcedPath {
+		// Take the path added as a parameter as the new path where to forward
+		// the messages
 		*newReq.URL = *parsedURL
 	} else {
+		// Forward the messages to the same path as the incoming message but
+		// make sure to send to the correct `Scheme` and `Host`.
 		*newReq.URL = *oldReq.URL
 		newReq.URL.Host = parsedURL.Host
 		newReq.URL.Scheme = parsedURL.Scheme
