@@ -25,13 +25,18 @@ func TestInbound(t *testing.T) {
 	server2 := httptest.NewServer(s2)
 	defer server2.Close()
 
+	s3 := &TestService{T: t, Name: "s3", Code: http.StatusCreated}
+	server3 := httptest.NewServer(s3)
+	defer server3.Close()
+
 	inbound := &Inbound{
 		Name:    "bob",
 		Timeout: 50 * time.Millisecond,
-		Outbound: map[string]string{
-			"s0": server0.URL,
-			"s1": server1.URL,
-			"s2": server2.URL,
+		Outbound: map[string]OutboundProperties{
+			"s0": OutboundProperties{Host: server0.URL},
+			"s1": OutboundProperties{Host: server1.URL},
+			"s2": OutboundProperties{Host: server2.URL},
+			"s3": OutboundProperties{Host: server3.URL, Path: "mopub"},
 		},
 		Active: "s1",
 	}
@@ -44,6 +49,7 @@ func TestInbound(t *testing.T) {
 	s0.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
 	s1.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
 	s2.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
+	s3.Expect("{GET /mopub r00}", "{PUT /mopub r01}", "{POST /mopub r02}")
 }
 
 func BenchmarkInbound_1(b *testing.B) {
@@ -65,8 +71,7 @@ func BenchmarkInbound_8(b *testing.B) {
 func InboundBench(b *testing.B, inbounds int) {
 
 	klog.SetPrinter(klog.NilPrinter)
-
-	inbound := &Inbound{Name: "bob", IdleConnections: 32, Outbound: make(map[string]string)}
+	inbound := &Inbound{Name: "bob", IdleConnections: 32, Outbound: make(map[string]OutboundProperties)}
 	server := httptest.NewServer(inbound)
 	defer server.Close()
 
@@ -85,7 +90,7 @@ func InboundBench(b *testing.B, inbounds int) {
 	for i := 0; i < inbounds; i++ {
 		name := fmt.Sprintf("s%d", i)
 		servers = append(servers, httptest.NewServer(handler))
-		inbound.Outbound[name] = servers[len(servers)-1].URL
+		inbound.Outbound[name] = OutboundProperties{Host: servers[len(servers)-1].URL}
 		inbound.Active = name
 	}
 

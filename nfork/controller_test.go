@@ -23,20 +23,20 @@ func TestController(t *testing.T) {
 	server2 := httptest.NewServer(s2)
 	defer server2.Close()
 
-	i0, i0URL := NewInbound("i0", "s0", map[string]string{
-		"s0": server0.URL,
-		"s1": server1.URL,
+	i0, i0URL := NewInbound("i0", "s0", map[string]OutboundProperties{
+		"s0": OutboundProperties{Host: server0.URL},
+		"s1": OutboundProperties{Host: server1.URL},
 	})
 
-	i1, i1URL := NewInbound("i1", "s1", map[string]string{
-		"s1": server1.URL,
-		"s2": server2.URL,
+	i1, i1URL := NewInbound("i1", "s1", map[string]OutboundProperties{
+		"s1": OutboundProperties{Host: server1.URL},
+		"s2": OutboundProperties{Host: server2.URL},
 	})
 
-	i2, i2URL := NewInbound("i2", "s2", map[string]string{
-		"s0": server0.URL,
-		"s1": server1.URL,
-		"s2": server2.URL,
+	i2, i2URL := NewInbound("i2", "s2", map[string]OutboundProperties{
+		"s0": OutboundProperties{Host: server0.URL},
+		"s1": OutboundProperties{Host: server1.URL},
+		"s2": OutboundProperties{Host: server2.URL},
 	})
 
 	control := NewController([]*Inbound{i0})
@@ -70,7 +70,7 @@ func TestController(t *testing.T) {
 	s2.Expect("{GET /b r3}")
 }
 
-func NewInbound(name, active string, out map[string]string) (*Inbound, string) {
+func NewInbound(name, active string, out map[string]OutboundProperties) (*Inbound, string) {
 	listen, URL := AllocatePort()
 	return &Inbound{
 		Name:     name,

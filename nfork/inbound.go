@@ -19,6 +19,18 @@ import (
 	"time"
 )
 
+// OutboundProperties contains information on the Outbound host
+// as well as the outbound path to override the HTTP path.
+type OutboundProperties struct {
+	// Host is the address where HTTP requests
+	// should be redirected to. Addresses should be of the for
+	// <scheme>://<host>:<port>.
+	Host string `json:"host"`
+	// Path will be appended to the route of the host.
+	// It will also override  the HTTP path.
+	Path string `json:"path,omitempty"`
+}
+
 // DefaultInboundTimeout is used if no timeout is set for an inbound.
 const DefaultInboundTimeout = 1 * time.Second
 
@@ -37,7 +49,9 @@ type Inbound struct {
 	// Outbound maps a set of outbound names to the address where HTTP requests
 	// should be redirected to. Addresses should be of the for
 	// <scheme>://<host>:<port>.
-	Outbound map[string]string
+	// Optionally a path can be added which will be appended to the route of the
+	// host.
+	Outbound map[string]OutboundProperties
 
 	// Active defines the name of the outbound whose response will be forwarded
 	// back upstream. All other outbound responses are dropped.
@@ -72,7 +86,7 @@ func (inbound *Inbound) Copy() *Inbound {
 
 		Listen:   inbound.Listen,
 		Active:   inbound.Active,
-		Outbound: make(map[string]string),
+		Outbound: make(map[string]OutboundProperties),
 
 		Timeout:         inbound.Timeout,
 		TimeoutCode:     inbound.TimeoutCode,
@@ -178,8 +192,8 @@ func (inbound *Inbound) ReadOutboundStats(outbound string) (*Stats, error) {
 
 // AddOutbound adds a new outbound associated with the given address. If the
 // outbound already exists, it is overridden.
-func (inbound *Inbound) AddOutbound(outbound, addr string) error {
-	inbound.Outbound[outbound] = addr
+func (inbound *Inbound) AddOutbound(outbound, addr, path string) error {
+	inbound.Outbound[outbound] = OutboundProperties{Host: addr, Path: path}
 	inbound.stats[outbound] = new(StatsRecorder)
 	return nil
 }
@@ -227,12 +241,14 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 	httpReq.Header.Set("X-Nfork", "true")
 
 	var activeHost string
+	var activePath string
 
 	for outbound, host := range inbound.Outbound {
 		if outbound != inbound.Active {
-			go inbound.forward(outbound, httpReq, host, body)
+			go inbound.forward(outbound, httpReq, host.Host, host.Path, body)
 		} else {
-			activeHost = host
+			activeHost = host.Host
+			activePath = host.Path
 		}
 	}
 
@@ -240,7 +256,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 		log.Panicf("no active outbound '%s'", inbound.Active)
 	}
 
-	respHead, respBody, err := inbound.forward(inbound.Active, httpReq, activeHost, body)
+	respHead, respBody, err := inbound.forward(inbound.Active, httpReq, activeHost, activePath, body)
 	if err != nil {
 		http.Error(writer, err.Error(), inbound.TimeoutCode)
 		return
@@ -263,29 +279,51 @@ func (inbound *Inbound) record(outbound string, event Event) {
 	stats.Record(event)
 }
 
-func (inbound *Inbound) parseAddr(addr string) (host, scheme string) {
+func addScheme(addr string) (schemedAddr string) {
 	if i := strings.Index(addr, "://"); i >= 0 {
-		return addr[i+3:], addr[:i]
+		return addr
 	}
-	return addr, "http"
+	return "http://" + addr
+}
+
+func addPath(addr, path string) (pathdAddr string) {
+	if len(path) > 0 {
+		return addr + "/" + path
+	}
+	return addr
 }
 
 func (inbound *Inbound) forward(
-	outbound string, oldReq *http.Request, addr string, body []byte) (*http.Response, []byte, error) {
+	outbound string, oldReq *http.Request, addr, path string, body []byte) (*http.Response, []byte, error) {
 
 	t0 := time.Now()
 
-	host, scheme := inbound.parseAddr(addr)
+	addr = addScheme(addr)
+	addr = addPath(addr, path)
+	parsedURL, err := url.ParseRequestURI(addr)
+	if err != nil {
+		return nil, nil, inbound.error("parse", addr, err, t0)
+	}
 
 	newReq := new(http.Request)
 	*newReq = *oldReq
 
 	newReq.URL = new(url.URL)
-	*newReq.URL = *oldReq.URL
+	newReq.Host = parsedURL.Host
 
-	newReq.Host = host
-	newReq.URL.Host = host
-	newReq.URL.Scheme = scheme
+	hasEnforcedPath := len(path) > 0
+	if hasEnforcedPath {
+		// Take the path added as a parameter as the new path where to forward
+		// the messages
+		*newReq.URL = *parsedURL
+	} else {
+		// Forward the messages to the same path as the incoming message but
+		// make sure to send to the correct `Scheme` and `Host`.
+		*newReq.URL = *oldReq.URL
+		newReq.URL.Host = parsedURL.Host
+		newReq.URL.Scheme = parsedURL.Scheme
+	}
+
 	newReq.RequestURI = ""
 	newReq.Body = ioutil.NopCloser(bytes.NewReader(body))
 
@@ -351,9 +389,9 @@ func (inbound *Inbound) UnmarshalJSON(body []byte) (err error) {
 	var inboundJSON struct {
 		Name string `json:"name"`
 
-		Listen   string            `json:"listen"`
-		Outbound map[string]string `json:"out"`
-		Active   string            `json:"active"`
+		Listen   string                        `json:"listen"`
+		Outbound map[string]OutboundProperties `json:"out"`
+		Active   string                        `json:"active"`
 
 		Timeout     string `json:"timeout,omitempty"`
 		TimeoutCode int    `json:"timeoutCode,omitempty"`
@@ -386,9 +424,9 @@ func (inbound *Inbound) MarshalJSON() ([]byte, error) {
 	var inboundJSON struct {
 		Name string `json:"name"`
 
-		Listen   string            `json:"listen"`
-		Active   string            `json:"active"`
-		Outbound map[string]string `json:"out"`
+		Listen   string                        `json:"listen"`
+		Active   string                        `json:"active"`
+		Outbound map[string]OutboundProperties `json:"out"`
 
 		Timeout     string `json:"timeout,omitempty"`
 		TimeoutCode int    `json:"timeoutCode,omitempty"`
