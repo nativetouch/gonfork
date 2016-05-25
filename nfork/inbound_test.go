@@ -4,11 +4,12 @@ package nfork
 
 import (
 	"fmt"
-	"github.com/nativetouch/goklog/klog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/nativetouch/goklog/klog"
 )
 
 func TestInbound(t *testing.T) {
@@ -44,6 +45,28 @@ func TestInbound(t *testing.T) {
 	s0.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
 	s1.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
 	s2.Expect("{GET /a r00}", "{PUT /a/b r01}", "{POST /a/b/c r02}")
+}
+
+func TestInboundInactiveOutboundFailure(t *testing.T) {
+	s0 := &TestService{T: t, Name: "s0"}
+	server0 := httptest.NewServer(s0)
+	defer server0.Close()
+
+	inbound := &Inbound{
+		Name:    "bob",
+		Timeout: 50 * time.Millisecond,
+		Outbound: map[string]string{
+			"s0":          server0.URL,
+			"unreachable": "http://localhost:50999/unreachable",
+		},
+		Active: "s0",
+	}
+	server := httptest.NewServer(inbound)
+	defer server.Close()
+
+	// active outbound should receive traffic even when inactive outbound fails
+	ExpectInbound(t, server.URL, "GET", "a", "r00", http.StatusOK, "s0")
+	s0.Expect("{GET /a r00}")
 }
 
 func BenchmarkInbound_1(b *testing.B) {
