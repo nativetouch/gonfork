@@ -76,7 +76,7 @@ type Event struct {
 }
 
 // DefaultSampleRate is used if Rate is not set set in StatsRecorder.
-const DefaultSampleRate = 1 * time.Second
+const DefaultSampleRate = 10 * time.Second
 
 // StatsRecorder records stats for a given outbound and updates them at a
 // given rate.
