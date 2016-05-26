@@ -61,9 +61,9 @@ func TestInboundInactiveOutboundFailure(t *testing.T) {
 	inbound := &Inbound{
 		Name:    "bob",
 		Timeout: 50 * time.Millisecond,
-		Outbound: map[string]string{
-			"s0":          server0.URL,
-			"unreachable": "http://localhost:50999/unreachable",
+		Outbound: map[string]OutboundProperties{
+			"s0":          OutboundProperties{Host: server0.URL},
+			"unreachable": OutboundProperties{Host: "http://localhost:50999/unreachable"},
 		},
 		Active: "s0",
 	}
