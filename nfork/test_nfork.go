@@ -21,6 +21,17 @@ func AllocatePort() (listen, url string) {
 	return
 }
 
+func NewInbound(name, active string, out map[string]OutboundProperties) (*Inbound, string) {
+	listen, URL := AllocatePort()
+	return &Inbound{
+		Name:     name,
+		Listen:   listen,
+		Timeout:  50 * time.Millisecond,
+		Outbound: out,
+		Active:   active,
+	}, URL
+}
+
 type TestService struct {
 	T    *testing.T
 	Name string

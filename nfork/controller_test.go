@@ -70,17 +70,6 @@ func TestController(t *testing.T) {
 	s2.Expect("{GET /b r3}")
 }
 
-func NewInbound(name, active string, out map[string]OutboundProperties) (*Inbound, string) {
-	listen, URL := AllocatePort()
-	return &Inbound{
-		Name:     name,
-		Listen:   listen,
-		Timeout:  50 * time.Millisecond,
-		Outbound: out,
-		Active:   active,
-	}, URL
-}
-
 func ExpectAddIn(t *testing.T, control *Controller, inb *Inbound) {
 	if err := control.AddInbound(inb); err != nil {
 		t.Errorf("FAIL(inbound.add): unable to add '%s' -> %s", inb.Name, err)

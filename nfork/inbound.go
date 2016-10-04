@@ -73,9 +73,13 @@ type Inbound struct {
 	// will be used by the http client for this inbound. Setting this will
 	// overwrite the transport of the Client if it is set.
 	IdleConnections int
+	
+	// Rate at which stats are updated.
+	StatsUpdateRate time.Duration
 
 	initialize sync.Once
 
+	inboundStats StatsRecorder
 	stats map[string]*StatsRecorder
 }
 
@@ -91,9 +95,11 @@ func (inbound *Inbound) Copy() *Inbound {
 		Timeout:         inbound.Timeout,
 		TimeoutCode:     inbound.TimeoutCode,
 		IdleConnections: inbound.IdleConnections,
+		StatsUpdateRate: inbound.StatsUpdateRate,
 
 		Client: inbound.Client,
 		stats:  make(map[string]*StatsRecorder),
+		inboundStats : inbound.inboundStats,
 	}
 
 	for outbound, addr := range inbound.Outbound {
@@ -160,6 +166,10 @@ func (inbound *Inbound) init() {
 	if inbound.Client.Timeout == 0 {
 		inbound.Client.Timeout = inbound.Timeout
 	}
+	
+	if inbound.StatsUpdateRate == 0 {
+		inbound.StatsUpdateRate = DefaultSampleRate
+	}
 
 	if inbound.stats == nil {
 		inbound.stats = make(map[string]*StatsRecorder)
@@ -167,7 +177,10 @@ func (inbound *Inbound) init() {
 
 	for outbound := range inbound.Outbound {
 		inbound.stats[outbound] = new(StatsRecorder)
+		inbound.stats[outbound].Rate = inbound.StatsUpdateRate
 	}
+	
+	inbound.inboundStats.Rate = inbound.StatsUpdateRate
 }
 
 // ReadStats returns the stats associated with each outbounds.
@@ -195,6 +208,7 @@ func (inbound *Inbound) ReadOutboundStats(outbound string) (*Stats, error) {
 func (inbound *Inbound) AddOutbound(outbound, addr, path string) error {
 	inbound.Outbound[outbound] = OutboundProperties{Host: addr, Path: path}
 	inbound.stats[outbound] = new(StatsRecorder)
+	inbound.stats[outbound].Rate = inbound.StatsUpdateRate
 	return nil
 }
 
@@ -239,6 +253,8 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 	}
 
 	httpReq.Header.Set("X-Nfork", "true")
+	
+	inbound.recordInbound()
 
 	var activeHost string
 	var activePath string
@@ -277,6 +293,10 @@ func (inbound *Inbound) record(outbound string, event Event) {
 		log.Panicf("no stats for outbound '%s'", outbound)
 	}
 	stats.Record(event)
+}
+
+func (inbound *Inbound) recordInbound() {
+	inbound.inboundStats.Record(Event{})
 }
 
 func addScheme(addr string) (schemedAddr string) {
