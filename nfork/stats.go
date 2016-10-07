@@ -11,14 +11,6 @@ import (
 )
 
 
-// UpdateFunc is a callback function trigerred when stats have finished updating.
-type UpdateFunc func()
-
-// Call will be called by the UpdateFunc object.
-func (uf UpdateFunc) Call() {
-	uf()
-}
-
 // Stats contains the stats of an outbound at a given point in time.
 type Stats struct {
 
@@ -97,9 +89,6 @@ type StatsRecorder struct {
 	// Rand is the RNG used for stats sampling.
 	Rand *rand.Rand
 
-	// UpdateFinishedNotification is a function to be called when the update
-	// finished.
-	UpdateFinishedNotification *UpdateFunc
 
 	initialize sync.Once
 
@@ -182,10 +171,6 @@ func (recorder *StatsRecorder) run() {
 
 			recorder.prev = recorder.current
 			recorder.current = new(Stats)
-
-			if recorder.UpdateFinishedNotification != nil {
-				(*recorder.UpdateFinishedNotification)()
-			}
 
 			recorder.mutex.Unlock()
 
