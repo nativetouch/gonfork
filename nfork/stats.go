@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 // Stats contains the stats of an outbound at a given point in time.
 type Stats struct {
 
@@ -88,7 +87,6 @@ type StatsRecorder struct {
 
 	// Rand is the RNG used for stats sampling.
 	Rand *rand.Rand
-
 
 	initialize sync.Once
 
