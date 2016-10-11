@@ -76,6 +76,10 @@ type Inbound struct {
 	
 	// Rate at which stats are updated.
 	StatsUpdateRate time.Duration
+	
+	// ResponseHandler must be a function which handles the responses 
+	// from the different outbounds.
+	ResponseHandler func(http.ResponseWriter, *http.Response, []byte, error, int)
 
 	initialize sync.Once
 
@@ -180,6 +184,23 @@ func (inbound *Inbound) init() {
 		inbound.stats[outbound].Rate = inbound.StatsUpdateRate
 	}
 	
+	if inbound.ResponseHandler == nil {
+		inbound.ResponseHandler = func(writer http.ResponseWriter, respHead *http.Response, respBody []byte, err error, errorCode int) {
+			if err != nil {
+				http.Error(writer, err.Error(), errorCode)
+				return
+			}
+		
+			writerHeader := writer.Header()
+			for key, val := range respHead.Header {
+				writerHeader[key] = val
+			}
+		
+			writer.WriteHeader(respHead.StatusCode)
+			writer.Write(respBody)
+		}
+	}
+	
 	inbound.inboundStats.Rate = inbound.StatsUpdateRate
 }
 
@@ -248,7 +269,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 
 	body, err := ioutil.ReadAll(httpReq.Body)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		inbound.ResponseHandler(writer, nil, []byte{}, err, http.StatusBadRequest)
 		return
 	}
 
@@ -273,18 +294,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 	}
 
 	respHead, respBody, err := inbound.forward(inbound.Active, httpReq, activeHost, activePath, body)
-	if err != nil {
-		http.Error(writer, err.Error(), inbound.TimeoutCode)
-		return
-	}
-
-	writerHeader := writer.Header()
-	for key, val := range respHead.Header {
-		writerHeader[key] = val
-	}
-
-	writer.WriteHeader(respHead.StatusCode)
-	writer.Write(respBody)
+	inbound.ResponseHandler(writer, respHead, respBody, err, inbound.TimeoutCode)
 }
 
 func (inbound *Inbound) record(outbound string, event Event) {
