@@ -101,6 +101,18 @@ func (recorder *StatsRecorder) Init() {
 	recorder.initialize.Do(recorder.init)
 }
 
+// Copy copies the object.
+func (recorder *StatsRecorder) Copy() *StatsRecorder {
+	recorder.mutex.Lock()
+	defer recorder.mutex.Unlock()
+	return &StatsRecorder{
+		Rate:    recorder.Rate,
+		Rand:    recorder.Rand,
+		current: recorder.current,
+		prev:    recorder.prev,
+	}
+}
+
 func (recorder *StatsRecorder) init() {
 	if recorder.Rate == 0 {
 		recorder.Rate = DefaultSampleRate

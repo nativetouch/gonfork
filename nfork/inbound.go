@@ -73,18 +73,18 @@ type Inbound struct {
 	// will be used by the http client for this inbound. Setting this will
 	// overwrite the transport of the Client if it is set.
 	IdleConnections int
-	
+
 	// Rate at which stats are updated.
 	StatsUpdateRate time.Duration
-	
-	// ResponseHandler must be a function which handles the responses 
+
+	// ResponseHandler must be a function which handles the responses
 	// from the different outbounds.
 	ResponseHandler func(http.ResponseWriter, *http.Response, []byte, error, int)
 
 	initialize sync.Once
 
 	inboundStats StatsRecorder
-	stats map[string]*StatsRecorder
+	stats        map[string]*StatsRecorder
 }
 
 // Copy returns a copy of the inbound object.
@@ -101,9 +101,9 @@ func (inbound *Inbound) Copy() *Inbound {
 		IdleConnections: inbound.IdleConnections,
 		StatsUpdateRate: inbound.StatsUpdateRate,
 
-		Client: inbound.Client,
-		stats:  make(map[string]*StatsRecorder),
-		inboundStats : inbound.inboundStats,
+		Client:       inbound.Client,
+		stats:        make(map[string]*StatsRecorder),
+		inboundStats: *inbound.inboundStats.Copy(),
 	}
 
 	for outbound, addr := range inbound.Outbound {
@@ -170,7 +170,7 @@ func (inbound *Inbound) init() {
 	if inbound.Client.Timeout == 0 {
 		inbound.Client.Timeout = inbound.Timeout
 	}
-	
+
 	if inbound.StatsUpdateRate == 0 {
 		inbound.StatsUpdateRate = DefaultSampleRate
 	}
@@ -183,24 +183,24 @@ func (inbound *Inbound) init() {
 		inbound.stats[outbound] = new(StatsRecorder)
 		inbound.stats[outbound].Rate = inbound.StatsUpdateRate
 	}
-	
+
 	if inbound.ResponseHandler == nil {
 		inbound.ResponseHandler = func(writer http.ResponseWriter, respHead *http.Response, respBody []byte, err error, errorCode int) {
 			if err != nil {
 				http.Error(writer, err.Error(), errorCode)
 				return
 			}
-		
+
 			writerHeader := writer.Header()
 			for key, val := range respHead.Header {
 				writerHeader[key] = val
 			}
-		
+
 			writer.WriteHeader(respHead.StatusCode)
 			writer.Write(respBody)
 		}
 	}
-	
+
 	inbound.inboundStats.Rate = inbound.StatsUpdateRate
 }
 
@@ -274,7 +274,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 	}
 
 	httpReq.Header.Set("X-Nfork", "true")
-	
+
 	inbound.recordInbound()
 
 	var activeHost string
