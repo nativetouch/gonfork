@@ -20,7 +20,7 @@ vet: build
 
 lint: vet
 	@echo -- report coding style issues
-	@find . -type f -name "*.go" -exec golint {} \;
+	@find . -type f -name "*.go" -exec $(GOPATH)/bin/golint {} \;
 .PHONY: lint
 
 test-cover: vet

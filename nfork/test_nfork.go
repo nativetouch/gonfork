@@ -15,12 +15,14 @@ import (
 	"time"
 )
 
+//AllocatePort allocated ports
 func AllocatePort() (listen, url string) {
 	listen = fmt.Sprintf(":%d", rand.Intn(1000)+23456)
 	url = "http://localhost" + listen
 	return
 }
 
+//NewInbound creates a new inbound
 func NewInbound(name, active string, out map[string]OutboundProperties) (*Inbound, string) {
 	listen, URL := AllocatePort()
 	return &Inbound{
@@ -32,6 +34,7 @@ func NewInbound(name, active string, out map[string]OutboundProperties) (*Inboun
 	}, URL
 }
 
+//TestService is a test service
 type TestService struct {
 	T    *testing.T
 	Name string
@@ -44,6 +47,7 @@ type TestService struct {
 	requestC chan string
 }
 
+//Init initializes TestService
 func (service *TestService) Init() {
 	service.initialize.Do(service.init)
 }
@@ -83,6 +87,7 @@ func (service *TestService) ServeHTTP(writer http.ResponseWriter, httpReq *http.
 	writer.Write([]byte(service.Name))
 }
 
+//Expect tests received data against expected
 func (service *TestService) Expect(requests ...string) {
 	service.Init()
 
@@ -113,6 +118,7 @@ func (service *TestService) Expect(requests ...string) {
 	}
 }
 
+//ExpectInbound tests the result of sending to an inbound
 func ExpectInbound(t *testing.T, URL, method, path, req string, expCode int, expResp string) {
 	resp, body, err := SendTo(URL, method, path, req)
 	if err != nil {
@@ -133,6 +139,7 @@ func ExpectInbound(t *testing.T, URL, method, path, req string, expCode int, exp
 	}
 }
 
+//ExpectInboundTimeout tests the timeout of an inbound
 func ExpectInboundTimeout(t *testing.T, URL, method, path, req string) {
 	resp, _, err := SendTo(URL, method, path, req)
 	if err != nil {
@@ -145,6 +152,7 @@ func ExpectInboundTimeout(t *testing.T, URL, method, path, req string) {
 	}
 }
 
+//SendTo sends a http request to the given url
 func SendTo(URL, method, path, body string) (*http.Response, string, error) {
 	path = URL + "/" + path
 
