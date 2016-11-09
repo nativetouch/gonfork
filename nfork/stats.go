@@ -103,6 +103,8 @@ func (recorder *StatsRecorder) Init() {
 
 // Copy copies the object.
 func (recorder *StatsRecorder) Copy() *StatsRecorder {
+	recorder.mutex.Lock()
+	defer recorder.mutex.Unlock()
 	return &StatsRecorder{
 		Rate:    recorder.Rate,
 		Rand:    recorder.Rand,
