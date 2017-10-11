@@ -7,8 +7,6 @@ import (
 
 	"net"
 	"net/http"
-	"sync/atomic"
-	"unsafe"
 )
 
 // InboundServer wraps an Inbound object into an HTTP server and allows the
@@ -18,7 +16,7 @@ import (
 // synchronized externally.
 type InboundServer struct {
 	listener net.Listener
-	inbound  unsafe.Pointer
+	inbound  *Inbound
 }
 
 // NewInboundServer creates and starts a new HTTP server associated with the
@@ -110,9 +108,9 @@ func (server *InboundServer) ActivateOutbound(outbound string) error {
 }
 
 func (server *InboundServer) setInbound(inbound *Inbound) {
-	atomic.StorePointer(&server.inbound, unsafe.Pointer(inbound))
+	server.inbound = inbound
 }
 
 func (server *InboundServer) getInbound() *Inbound {
-	return (*Inbound)(atomic.LoadPointer(&server.inbound))
+	return server.inbound
 }
