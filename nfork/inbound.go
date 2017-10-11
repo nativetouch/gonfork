@@ -282,7 +282,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 
 	for outbound, host := range inbound.Outbound {
 		if outbound != inbound.Active {
-			go inbound.forward(outbound, httpReq, host.Host, host.Path, body)
+			inbound.forward(outbound, httpReq, host.Host, host.Path, body)
 		} else {
 			activeHost = host.Host
 			activePath = host.Path
