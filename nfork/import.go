@@ -12,12 +12,14 @@ import (
 func httpTransport(idleConnections int) *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
+		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-		}).Dial,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:        idleConnections,
+		IdleConnTimeout:     90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second,
-		MaxIdleConnsPerHost: idleConnections,
 	}
 }
 
