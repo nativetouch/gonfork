@@ -6,6 +6,7 @@ import (
 	"github.com/nativetouch/goklog/klog"
 
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -335,8 +336,10 @@ func (inbound *Inbound) forward(
 		return nil, nil, inbound.error("parse", addr, err, t0)
 	}
 
-	newReq := new(http.Request)
-	*newReq = *oldReq
+	ctx, cancelFunc := context.WithTimeout(context.Background(), inbound.Timeout)
+	defer cancelFunc()
+
+	newReq := oldReq.WithContext(ctx)
 
 	newReq.URL = new(url.URL)
 	newReq.Host = parsedURL.Host
