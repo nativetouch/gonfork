@@ -81,6 +81,10 @@ type Inbound struct {
 	// ResponseHandler must be a function which handles the responses
 	// from the different outbounds.
 	ResponseHandler func(http.ResponseWriter, *http.Response, []byte, error, int)
+	
+	// HeaderHandler must be a function which adds / replaces header
+	// for all the different outbounds.
+	HeaderHandler func(*http.Request)
 
 	initialize sync.Once
 
@@ -201,6 +205,12 @@ func (inbound *Inbound) init() {
 			writer.Write(respBody)
 		}
 	}
+	
+	if inbound.HeaderHandler == nil {
+		inbound.HeaderHandler = func(httpReq *http.Request) {
+			httpReq.Header.Set("X-Nfork", "true")
+		}
+	}
 
 	inbound.inboundStats.Rate = inbound.StatsUpdateRate
 }
@@ -274,7 +284,7 @@ func (inbound *Inbound) ServeHTTP(writer http.ResponseWriter, httpReq *http.Requ
 		return
 	}
 
-	httpReq.Header.Set("X-Nfork", "true")
+	inbound.HeaderHandler(httpReq)
 
 	inbound.recordInbound()
 
